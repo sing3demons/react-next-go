@@ -1,0 +1,16 @@
+@hostname = localhost
+@port = 8000
+@host = {{hostname}}:{{port}}
+###
+
+### Register
+POST http://{{host}}/api/admin/register HTTP/1.1
+Content-Type: application/json
+
+{
+    "first_name": "admin",
+    "last_name": "admin",
+    "email": "admin@dev.com",
+    "password": "admin1234",
+    "password_confirm": "admin1234"
+}
