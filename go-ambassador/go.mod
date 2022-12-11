@@ -6,6 +6,7 @@ require (
 	github.com/bxcodec/faker/v3 v3.8.1
 	github.com/gofiber/fiber/v2 v2.40.1
 	github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/joho/godotenv v1.4.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	gorm.io/driver/mysql v1.4.4
 	gorm.io/gorm v1.24.2

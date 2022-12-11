@@ -1,4 +1,4 @@
-package main
+package seeds
 
 import (
 	"math/rand"
@@ -8,7 +8,7 @@ import (
 	"github.com/sing3demons/ambassador/src/models"
 )
 
-func main() {
+func CreateProduct() {
 	database.Connect()
 
 	for i := 0; i < 30; i++ {
@@ -19,7 +19,7 @@ func main() {
 			Price:       float64(rand.Intn(90) + 10),
 		}
 
-		database.DB.Create(&product)
+		database.GetDB().Create(&product)
 	}
 
 }

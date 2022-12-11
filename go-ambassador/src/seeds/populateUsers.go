@@ -1,4 +1,4 @@
-package main
+package seeds
 
 import (
 	"github.com/bxcodec/faker/v3"
@@ -6,7 +6,7 @@ import (
 	"github.com/sing3demons/ambassador/src/models"
 )
 
-func main() {
+func CreateAmbassador() {
 	database.Connect()
 
 	for i := 0; i < 30; i++ {
@@ -19,6 +19,6 @@ func main() {
 
 		ambassador.EncryptPassword("1234")
 
-		database.DB.Create(&ambassador)
+		database.GetDB().Create(&ambassador)
 	}
 }

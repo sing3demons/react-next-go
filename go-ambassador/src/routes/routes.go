@@ -8,7 +8,7 @@ import (
 )
 
 func Setup(app *fiber.App) {
-	db := database.DB
+	db := database.GetDB()
 	api := app.Group("api")
 
 	admin := api.Group("admin")

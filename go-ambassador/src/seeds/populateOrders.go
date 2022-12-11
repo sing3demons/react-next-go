@@ -1,4 +1,4 @@
-package main
+package seeds
 
 import (
 	"math/rand"
@@ -8,7 +8,7 @@ import (
 	"github.com/sing3demons/ambassador/src/models"
 )
 
-func main() {
+func CreateOrder() {
 	database.Connect()
 
 	for i := 0; i < 30; i++ {
@@ -27,7 +27,7 @@ func main() {
 			})
 		}
 
-		database.DB.Create(&models.Order{
+		database.GetDB().Create(&models.Order{
 			UserId:          uint(rand.Intn(30) + 1),
 			Code:            faker.Username(),
 			AmbassadorEmail: faker.Email(),

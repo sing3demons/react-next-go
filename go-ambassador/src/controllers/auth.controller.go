@@ -43,7 +43,6 @@ func (h *authController) Register(c *fiber.Ctx) error {
 		FirstName: data["first_name"],
 		LastName:  data["last_name"],
 		Email:     data["email"],
-		// Password:     string(password),
 		IsAmbassador: strings.Contains(c.Path(), "/api/ambassador"),
 	}
 

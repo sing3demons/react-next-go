@@ -6,16 +6,20 @@ import (
 	"gorm.io/gorm"
 )
 
-var DB *gorm.DB
+var db *gorm.DB
 
 func Connect() {
 	var err error
-	DB, err = gorm.Open(mysql.Open("root:root@tcp(127.0.0.1:3306)/ambassador"), &gorm.Config{})
+	db, err = gorm.Open(mysql.Open("root:root@tcp(127.0.0.1:3306)/ambassador"), &gorm.Config{})
 	if err != nil {
 		panic("Could not connect with the database")
 	}
 }
 
 func AutoMigrate() {
-	DB.AutoMigrate(models.User{}, models.Product{}, models.Link{}, models.Order{}, models.OrderItem{})
+	db.AutoMigrate(models.User{}, models.Product{}, models.Link{}, models.Order{}, models.OrderItem{})
+}
+
+func GetDB() *gorm.DB {
+	return db
 }
