@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -43,7 +44,7 @@ func (h *authController) Register(c *fiber.Ctx) error {
 		LastName:  data["last_name"],
 		Email:     data["email"],
 		// Password:     string(password),
-		IsAmbassador: false,
+		IsAmbassador: strings.Contains(c.Path(), "/api/ambassador"),
 	}
 
 	if err := user.EncryptPassword(data["password"]); err != nil {
