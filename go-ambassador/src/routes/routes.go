@@ -13,8 +13,7 @@ func Setup(app *fiber.App) {
 
 	admin := api.Group("admin")
 	authController := controllers.NewAuthApplication(db)
-	ambassadorController := controllers.NewUser(db)
-	productController := controllers.NewProduct(db)
+
 	admin.Post("register", authController.Register)
 	admin.Post("login", authController.Login)
 	{
@@ -22,11 +21,36 @@ func Setup(app *fiber.App) {
 		admin.Get("user", authController.GetUser)
 		admin.Put("user", authController.UpdateInfo)
 		admin.Patch("user/password", authController.UpdatePassword)
-		admin.Get("ambassador", ambassadorController.Ambassador)
-		admin.Get("products", productController.Products)
-		admin.Get("product/:id", productController.GetProduct)
-		admin.Put("product/:id", productController.UpdateProduct)
-		admin.Delete("product/:id", productController.DeleteProduct)
+
+	}
+
+	linkController := controllers.NewLink(db)
+	{
+		admin.Use(middleware.Protected())
+		admin.Get("user/:id/links", linkController.Link)
+	}
+
+	orderController := controllers.NewOrder(db)
+	{
+		admin.Use(middleware.Protected())
+		admin.Get("orders", orderController.Order)
+	}
+
+	ambassadorController := controllers.NewUser(db)
+	ambassadorGroup := admin.Group("ambassador")
+	{
+		ambassadorGroup.Use(middleware.Protected())
+		ambassadorGroup.Get("", ambassadorController.Ambassador)
+	}
+
+	productController := controllers.NewProduct(db)
+	productGroup := admin.Group("products")
+	{
+		productGroup.Use(middleware.Protected())
+		productGroup.Get("", productController.Products)
+		productGroup.Get("/:id", productController.GetProduct)
+		productGroup.Put("/:id", productController.UpdateProduct)
+		productGroup.Delete("/:id", productController.DeleteProduct)
 	}
 
 }
