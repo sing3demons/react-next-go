@@ -24,3 +24,7 @@ Authorization: Bearer {{token}}
 GET http://{{host}}/api/admin/ambassador/user
 Content-Type: application/json
 Authorization: Bearer {{token}}
+
+###
+GET http://{{host}}/api/ambassador/products/frontend
+Content-Type: application/json

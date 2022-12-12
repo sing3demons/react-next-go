@@ -43,7 +43,8 @@ func Setup(app *fiber.App) {
 		ambassador.Get("", ambassadorController.Ambassador)
 	}
 
-	productController := controllers.NewProduct(db)
+	cache := database.Cache
+	productController := controllers.NewProduct(db, cache)
 	productGroup := admin.Group("products")
 	{
 		productGroup.Use(middleware.Protected())
@@ -56,6 +57,7 @@ func Setup(app *fiber.App) {
 	ambassadorGroup := api.Group("ambassador")
 	ambassadorGroup.Post("register", authController.Register)
 	ambassadorGroup.Post("login", authController.Login)
+	ambassadorGroup.Get("products/frontend", productController.ProductsFrontend)
 	{
 		ambassadorGroup.Use(middleware.IsAuthenticated)
 		ambassadorGroup.Get("user", authController.User)

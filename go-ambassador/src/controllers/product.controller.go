@@ -1,19 +1,25 @@
 package controllers
 
 import (
+	"context"
+	"encoding/json"
+	"log"
 	"strconv"
+	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sing3demons/ambassador/src/models"
 	"gorm.io/gorm"
 )
 
 type Product struct {
-	db *gorm.DB
+	db    *gorm.DB
+	Cache *redis.Client
 }
 
-func NewProduct(db *gorm.DB) *Product {
-	return &Product{db: db}
+func NewProduct(db *gorm.DB, Cache *redis.Client) *Product {
+	return &Product{db: db, Cache: Cache}
 }
 
 type ResponseProduct struct {
@@ -93,4 +99,28 @@ func (h *Product) DeleteProduct(c *fiber.Ctx) error {
 	h.db.Delete(&product, id)
 
 	return c.SendStatus(fiber.StatusOK)
+}
+
+func (h *Product) ProductsFrontend(c *fiber.Ctx) error {
+	var products []models.Product
+	var ctx = context.Background()
+
+	result, err := h.Cache.Get(ctx, "products_frontend").Result()
+	if result == "" && err != nil {
+		h.db.Find(&products)
+
+		bytes, err := json.Marshal(products)
+
+		if err != nil {
+			panic(err)
+		}
+
+		if errKey := h.Cache.Set(ctx, "products_frontend", bytes, 10*time.Second).Err(); errKey != nil {
+			panic(errKey)
+		}
+	} else {
+		json.Unmarshal([]byte(result), &products)
+	}
+
+	return c.JSON(products)
 }

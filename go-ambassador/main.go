@@ -33,6 +33,7 @@ func init() {
 func main() {
 	database.Connect()
 	database.AutoMigrate()
+	database.Redis()
 
 	app := fiber.New()
 	app.Use(recover.New())
