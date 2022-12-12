@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/sing3demons/ambassador/src/middleware"
 	"github.com/sing3demons/ambassador/src/models"
 	"gorm.io/gorm"
 )
@@ -40,9 +40,9 @@ func (h *authController) Register(c *fiber.Ctx) error {
 	// password, err := bcrypt.GenerateFromPassword([]byte(data["password"]), 12)
 
 	user := models.User{
-		FirstName: data["first_name"],
-		LastName:  data["last_name"],
-		Email:     data["email"],
+		FirstName:    data["first_name"],
+		LastName:     data["last_name"],
+		Email:        data["email"],
 		IsAmbassador: strings.Contains(c.Path(), "/api/ambassador"),
 	}
 
@@ -67,31 +67,84 @@ func (h *authController) Login(c *fiber.Ctx) error {
 	var data map[string]string
 
 	if err := c.BodyParser(&data); err != nil {
+		return err
+	}
+
+	var user models.User
+
+	h.db.Where("email = ?", data["email"]).First(&user)
+
+	if user.ID == 0 {
+		c.Status(fiber.StatusBadRequest)
+		return c.JSON(fiber.Map{
+			"message": "Invalid Credentials",
+		})
+	}
+
+	if err := user.CheckPassword(data["password"]); err != nil {
+		c.Status(fiber.StatusBadRequest)
+		return c.JSON(fiber.Map{
+			"message": "Invalid Credentials",
+		})
+	}
+
+	isAmbassador := strings.Contains(c.Path(), "/api/ambassador")
+
+	var scope string
+
+	if isAmbassador {
+		scope = "ambassador"
+	} else {
+		scope = "admin"
+	}
+
+	if !isAmbassador && user.IsAmbassador {
+		c.Status(fiber.StatusUnauthorized)
+		return c.JSON(fiber.Map{
+			"message": "unauthorized",
+		})
+	}
+
+	token, err := middleware.GenerateJWT(user.ID, scope)
+
+	if err != nil {
+		c.Status(fiber.StatusBadRequest)
+		return c.JSON(fiber.Map{
+			"message": "Invalid Credentials",
+		})
+	}
+
+	cookie := fiber.Cookie{
+		Name:     "jwt",
+		Value:    token,
+		Expires:  time.Now().Add(time.Hour * 24),
+		HTTPOnly: true,
+	}
+
+	c.Cookie(&cookie)
+
+	return c.JSON(fiber.Map{
+		"message": "success",
+	})
+}
+
+func (h *authController) Login2(c *fiber.Ctx) error {
+	var data map[string]string
+
+	if err := c.BodyParser(&data); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
 	var user models.User
-	// h.db.Where("email = ?", data["email"]).Find(&user)
-	// if user.ID == 0 {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"message": "Invalid Credentials",
-	// 	})
-	// }
+
 	if err := h.db.First(&user, "email = ?", data["email"]).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Println(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Invalid Credentials",
 		})
 	}
-
-	// if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data["password"])); err != nil {
-	// 	log.Println(err.Error())
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"message": "Invalid Credentials",
-	// 	})
-	// }
 
 	if err := user.CheckPassword(data["password"]); err != nil {
 		log.Println(err.Error())
@@ -100,11 +153,6 @@ func (h *authController) Login(c *fiber.Ctx) error {
 		})
 	}
 	sub := strconv.Itoa(int(user.ID))
-
-	// payload := jwt.StandardClaims{
-	// 	Subject:   sub,
-	// 	ExpiresAt: time.Now().Add(time.Hour * 2).Unix(),
-	// }
 
 	payload := jwt.RegisteredClaims{
 		Subject:   sub,
@@ -132,22 +180,19 @@ func (h *authController) Login(c *fiber.Ctx) error {
 }
 
 func (h *authController) User(c *fiber.Ctx) error {
-	cookie := c.Cookies("jwt")
+	id, _ := middleware.GetUserId(c)
 
-	t, err := jwt.ParseWithClaims(cookie, &jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-		}
-		return []byte("MySignature"), nil
-	})
-	if err != nil || !t.Valid {
-		return c.Status(fiber.StatusUnauthorized).
-			JSON(fiber.Map{"message": "unauthenticated"})
+	var user models.User
+
+	h.db.Where("id = ?", id).First(&user)
+
+	if strings.Contains(c.Path(), "/api/ambassador") {
+		ambassador := models.Ambassador(user)
+		ambassador.CalculateRevenue(h.db)
+		return c.JSON(ambassador)
 	}
 
-	payload := t.Claims
-
-	return c.Status(fiber.StatusOK).JSON(payload)
+	return c.JSON(user)
 }
 
 func (h *authController) Logout(c *fiber.Ctx) error {

@@ -58,6 +58,7 @@ func Setup(app *fiber.App) {
 	ambassadorGroup.Post("login", authController.Login)
 	{
 		ambassadorGroup.Use(middleware.IsAuthenticated)
+		ambassadorGroup.Get("user", authController.User)
 
 	}
 }

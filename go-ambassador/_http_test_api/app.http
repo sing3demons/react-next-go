@@ -20,3 +20,7 @@ GET http://{{host}}/api/admin/user
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
+###
+GET http://{{host}}/api/admin/ambassador/user
+Content-Type: application/json
+Authorization: Bearer {{token}}
